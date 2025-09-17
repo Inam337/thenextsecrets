@@ -1,0 +1,397 @@
+# State Management & API Integration Rules
+
+## Overview
+This project uses Zustand for state management with API integration encapsulated within stores. All API calls should be handled by stores, not components.
+
+## Core Principles
+
+### 1. Store-First API Integration
+- **All API calls must go through stores**
+- **Components should never make direct API calls**
+- **Stores handle data fetching, caching, and state updates**
+
+### 2. Service Layer Encapsulation
+- **API logic is centralized in stores**
+- **Services are imported and used within stores**
+- **Components only consume store state and actions**
+
+### 3. SSR Compatibility
+- **All store operations must be SSR-safe**
+- **Use `typeof window === 'undefined'` checks for client-only operations**
+- **Persist only essential data, not dynamic content**
+
+## Store Architecture Pattern
+
+### Basic Store Structure
+```typescript
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { apiService } from '@/services/api';
+
+interface StoreState {
+  // State
+  data: DataType[];
+  loading: boolean;
+  error: string | null;
+  
+  // Actions with API integration
+  loadData: () => Promise<void>;
+  createItem: (data: CreateData) => Promise<Result>;
+  updateItem: (id: string, data: UpdateData) => Promise<Result>;
+  deleteItem: (id: string) => Promise<Result>;
+  
+  // State setters
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+}
+
+export const useStore = create<StoreState>()(
+  persist(
+    (set, get) => ({
+      // Initial state
+      data: [],
+      loading: false,
+      error: null,
+      
+      // API-integrated actions
+      loadData: async () => {
+        try {
+          set({ loading: true, error: null });
+          const response = await apiService.getData();
+          set({ data: response.data, loading: false });
+        } catch (error) {
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to load data',
+            loading: false 
+          });
+        }
+      },
+      
+      createItem: async (data) => {
+        try {
+          const result = await apiService.createItem(data);
+          if (result.success) {
+            // Auto-refresh data after successful creation
+            await get().loadData();
+          }
+          return result;
+        } catch (error) {
+          return {
+            success: false,
+            message: 'Failed to create item',
+            error: error instanceof Error ? error.message : 'Unknown error',
+          };
+        }
+      },
+      
+      // State setters
+      setLoading: (loading) => set({ loading }),
+      setError: (error) => set({ error }),
+    }),
+    {
+      name: 'store-name',
+      partialize: state => ({
+        // Only persist essential state, not dynamic data
+        // data: state.data, // Don't persist dynamic data
+      }),
+    },
+  ),
+);
+```
+
+### SSR-Safe Operations
+```typescript
+// Always check for window before client-side operations
+someAction: async () => {
+  if (typeof window === 'undefined') {
+    return; // Exit early on server
+  }
+  
+  // Client-side operations here
+  const response = await fetch('/api/endpoint');
+  // Handle response
+},
+```
+
+## Component Usage Pattern
+
+### ❌ Wrong - Direct API calls in components
+```typescript
+// DON'T DO THIS
+function Component() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      const response = await fetch('/api/data');
+      setData(response.data);
+      setLoading(false);
+    };
+    loadData();
+  }, []);
+  
+  return <div>{/* render data */}</div>;
+}
+```
+
+### ✅ Correct - Store-based approach
+```typescript
+// DO THIS
+function Component() {
+  const { data, loading, error, loadData } = useStore();
+  
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+  
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  
+  return <div>{/* render data */}</div>;
+}
+```
+
+## Optimized Selectors Pattern
+
+### Store Index with Selectors
+```typescript
+// src/stores/index.ts
+import { useStore } from './store';
+
+// Optimized selectors for performance
+export const useData = () => useStore(state => state.data);
+export const useLoading = () => useStore(state => state.loading);
+export const useError = () => useStore(state => state.error);
+export const useLoadData = () => useStore(state => state.loadData);
+export const useCreateItem = () => useStore(state => state.createItem);
+```
+
+## Error Handling Pattern
+
+### Store-Level Error Handling
+```typescript
+loadData: async () => {
+  try {
+    set({ loading: true, error: null });
+    const response = await apiService.getData();
+    set({ data: response.data, loading: false });
+  } catch (error) {
+    set({ 
+      error: error instanceof Error ? error.message : 'Failed to load data',
+      loading: false 
+    });
+  }
+},
+```
+
+### Component-Level Error Display
+```typescript
+function Component() {
+  const { data, loading, error } = useStore();
+  
+  if (error) {
+    return (
+      <div className="error-message">
+        <p>Error: {error}</p>
+        <button onClick={() => loadData()}>Retry</button>
+      </div>
+    );
+  }
+  
+  return <div>{/* render data */}</div>;
+}
+```
+
+## Auto-Refresh Pattern
+
+### After Mutations
+```typescript
+createItem: async (data) => {
+  try {
+    const result = await apiService.createItem(data);
+    if (result.success) {
+      // Auto-refresh data after successful creation
+      await get().loadData();
+    }
+    return result;
+  } catch (error) {
+    return { success: false, message: 'Failed to create item' };
+  }
+},
+```
+
+## Persistence Rules
+
+### What to Persist
+```typescript
+partialize: state => ({
+  // ✅ Persist user preferences, settings, pagination state
+  currentPage: state.currentPage,
+  pageSize: state.pageSize,
+  userPreferences: state.userPreferences,
+  
+  // ❌ Don't persist dynamic data, API responses
+  // data: state.data,
+  // loading: state.loading,
+  // error: state.error,
+}),
+```
+
+## File Organization
+
+### Store Files
+```
+src/stores/
+├── auth.ts          # Authentication & permissions
+├── complaint.ts     # Complaint management
+├── user.ts          # User management
+├── loader.ts        # Loading states
+└── index.ts         # Optimized selectors
+```
+
+### Service Files
+```
+src/services/
+├── auth.ts          # Authentication API calls
+├── complaint.ts     # Complaint API calls
+├── user.ts          # User API calls
+└── location.ts      # Geographic data API calls
+```
+
+## Performance Optimization
+
+### Selective Subscriptions
+```typescript
+// ✅ Good - Subscribe only to needed state
+const { data, loading } = useStore(state => ({
+  data: state.data,
+  loading: state.loading,
+}));
+
+// ❌ Bad - Subscribe to entire store
+const store = useStore();
+```
+
+### Memoized Selectors
+```typescript
+// ✅ Good - Memoized selector
+export const useFilteredData = () => useStore(
+  useCallback(state => state.data.filter(item => item.active), [])
+);
+```
+
+## Testing Pattern
+
+### Store Testing
+```typescript
+// Test store actions
+describe('Store', () => {
+  it('should load data successfully', async () => {
+    const store = useStore.getState();
+    await store.loadData();
+    expect(store.data).toHaveLength(2);
+    expect(store.loading).toBe(false);
+  });
+});
+```
+
+### Component Testing
+```typescript
+// Test component with store
+describe('Component', () => {
+  it('should render data from store', () => {
+    render(<Component />);
+    expect(screen.getByText('Data Item')).toBeInTheDocument();
+  });
+});
+```
+
+## Migration Guidelines
+
+### From Component API Calls to Store
+1. **Identify API calls in components**
+2. **Create store actions for each API call**
+3. **Move API logic to store**
+4. **Update components to use store selectors**
+5. **Remove component-level state management**
+
+### Example Migration
+```typescript
+// Before
+function Component() {
+  const [data, setData] = useState([]);
+  const loadData = async () => {
+    const response = await fetch('/api/data');
+    setData(response.data);
+  };
+}
+
+// After
+function Component() {
+  const { data, loadData } = useStore();
+  useEffect(() => loadData(), [loadData]);
+}
+```
+
+## Best Practices
+
+1. **Always use stores for API calls**
+2. **Implement proper error handling in stores**
+3. **Use loading states for better UX**
+4. **Auto-refresh data after mutations**
+5. **Persist only essential state**
+6. **Use optimized selectors for performance**
+7. **Keep stores focused on single domains**
+8. **Test stores independently**
+9. **Document store actions and state**
+10. **Follow TypeScript strictly**
+
+## Common Patterns
+
+### CRUD Operations
+```typescript
+interface CRUDStore {
+  items: Item[];
+  loading: boolean;
+  error: string | null;
+  
+  loadItems: () => Promise<void>;
+  createItem: (data: CreateData) => Promise<Result>;
+  updateItem: (id: string, data: UpdateData) => Promise<Result>;
+  deleteItem: (id: string) => Promise<Result>;
+}
+```
+
+### Pagination Pattern
+```typescript
+interface PaginatedStore {
+  data: Item[];
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  
+  loadPage: (page: number) => Promise<void>;
+  setPageSize: (size: number) => void;
+}
+```
+
+### Filtering Pattern
+```typescript
+interface FilteredStore {
+  data: Item[];
+  filters: FilterState;
+  
+  setFilter: (key: string, value: any) => void;
+  applyFilters: () => Promise<void>;
+  clearFilters: () => void;
+}
+```
+
+This pattern ensures consistent, maintainable, and performant state management across the application.
+description:
+globs:
+alwaysApply: false
+---

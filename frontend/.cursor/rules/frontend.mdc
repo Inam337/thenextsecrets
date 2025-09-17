@@ -1,0 +1,757 @@
+---
+alwaysApply: true
+---
+
+
+# React with Next.js SSR and API Integration Rules
+
+## Project Overview
+- **Framework**: Next.js with App Router for SSR.
+- **Language**: TypeScript (strict mode, no `any` or `unknown` types).
+- **Styling**: Tailwind CSS for responsive, mobile-first design.
+- **API**: RESTful APIs or GraphQL with type-safe clients (Axios or Apollo Client).
+- **Goals**: Implement SSR for SEO and performance, integrate APIs securely, maintain consistent repository structure, and ensure high test coverage.
+
+## Repository Structure
+- Organize files by feature or route to align with Next.js App Router (,):[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)[](https://dev.to/stamigos/setting-up-cursor-rules-the-complete-guide-to-ai-enhanced-development-24cg)
+  ```
+  frontend/
+  ├── .cursor/
+  │   └── rules/
+  │       └── frontend/
+  │           └── react-ssr-api.mdc  # This rule file
+  ├── app/                           # Next.js App Router routes
+  │   ├── [route]/                   # Dynamic routes
+  │   │   ├── page.tsx              # Server-side rendered page
+  │   │   ├── layout.tsx            # Layout for route
+  │   │   └── loading.tsx           # Loading state for Suspense
+  │   └── api/                      # API routes
+  │       └── [endpoint]/route.ts   # API route handlers
+  ├── src/
+  │   ├── components/               # Reusable React components
+  │   │   └── [Feature]/            # Feature-based folder
+  │   │       ├── index.tsx         # Component logic
+  │   │       └── styles.ts         # Tailwind styles
+  │   ├── services/                 # API service layer
+  │   │   └── [Feature].ts          # API call definitions
+  │   ├── hooks/                    # Custom React hooks
+  │   │   └── use[Feature].ts       # Feature-specific hooks
+  │   ├── utils/                    # Utility functions
+  │   └── types/                    # TypeScript type definitions
+  ├── tests/                        # Unit and integration tests
+  │   ├── components/               # Component tests
+  │   ├── services/                 # API service tests
+  │   └── hooks/                    # Hook tests
+  ├── public/                       # Static assets (images, etc.)
+  └── package.json
+  ```
+- **Rules**:
+  - Place new components in `/src/components/[Feature]/index.tsx`.
+  - Define API calls in `/src/services/[Feature].ts`.
+  - Create custom hooks in `/src/hooks/use[Feature].ts`.
+  - Define types in `/src/types/[Feature].ts`.
+  - Write tests in `/tests/[category]/[Feature].test.ts`.
+  - Use kebab-case for directories (e.g., `auth-form`) and PascalCase for component files (e.g., `AuthForm.tsx`) ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+
+## SSR Best Practices
+- **Use Next.js App Router**:
+  - Create server-side rendered pages in `app/[route]/page.tsx` using `getServerSideProps` for dynamic data fetching ().[](https://medium.com/simform-engineering/how-to-implement-ssr-server-side-rendering-in-react-18-e49bc43e9531)
+  - Prefer server components over client components to minimize `use client` usage (,).[](https://cursor.directory/rules/react)[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+  - Example:
+    ```tsx
+    // app/[route]/page.tsx
+    import { GetServerSideProps } from 'next';
+    import { MyData } from '@/types/MyData';
+
+    export const getServerSideProps: GetServerSideProps = async (context) => {
+      const res = await fetch('https://api.example.com/data');
+      const data: MyData = await res.json();
+      return { props: { data } };
+    };
+
+    export default function Page({ data }: { data: MyData }) {
+      return <div>{data.title}</div>;
+    }
+    ```
+- **Suspense and Loading**:
+  - Wrap client components in `Suspense` with a `loading.tsx` fallback (,).[](https://cursor.directory/rules/react)[](https://dotcursorrules.com/rules)
+  - Example:
+    ```tsx
+    // app/[route]/page.tsx
+    import { Suspense } from 'react';
+    import MyComponent from '@/components/MyComponent';
+
+    export default function Page() {
+      return (
+        <Suspense fallback={<div>Loading...</div>}>
+          <MyComponent />
+        </Suspense>
+      );
+    }
+    ```
+- **Optimize Web Vitals**:
+  - Use `next/image` for optimized images (WebP, lazy-loading) ().[](https://cursor.directory/rules/react)
+  - Minimize `useEffect` and `useState` in client components ().[](https://cursor.directory/rules/popular)
+  - Monitor LCP, CLS, and FID ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+
+## API Integration
+- **Service Layer**:
+  - Define API calls in `/src/services/[Feature].ts` using Axios or Apollo Client (,).[](https://github.com/PatrickJS/awesome-cursorrules)[](https://sbstjn.com/blog/ai-code-companion-cursor-rules/)
+  - Use type-safe interfaces for request/response data.
+  - Sanitize inputs to prevent XSS ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+  - Example (Axios):
+    ```ts
+    // src/services/Article.ts
+    import axios from 'axios';
+    import { Article } from '@/types/Article';
+
+    const api = axios.create({ baseURL: 'https://api.example.com' });
+
+    export const fetchArticles = async (): Promise<Article[]> => {
+      const response = await api.get('/articles');
+      return response.data;
+    };
+
+    export const createArticle = async (data: Article): Promise<Article> => {
+      if (!data.title || data.title.length < 3) {
+        throw new Error('Title too short');
+      }
+      const response = await api.post('/articles', data);
+      return response.data;
+    };
+    ```
+- **GraphQL (Optional)**:
+  - Use Apollo Client for GraphQL with type-safe queries ().[](https://sbstjn.com/blog/ai-code-companion-cursor-rules/)
+  - Example:
+    ```ts
+    // src/services/Article.ts
+    import { gql, ApolloClient, InMemoryCache } from '@apollo/client';
+    
+    const client = new ApolloClient({
+      uri: 'https://api.example.com/graphql',
+      cache: new InMemoryCache(),
+    });
+
+    const GET_ARTICLES = gql`
+      query GetArticles {
+        articles {
+          id
+          title
+        }
+      }
+    `;
+
+    export const fetchArticles = async () => {
+      const { data } = await client.query({ query: GET_ARTICLES });
+      return data.articles;
+    };
+    ```
+- **Error Handling**:
+  - Implement user-friendly error messages and log errors securely (integrate with `LoggingExtensions.cs` from your backend) ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+  - Example:
+    ```ts
+    // src/services/Article.ts
+    import { Log } from '@/utils/logger'; // Assuming a logger utility
+
+    export const fetchArticles = async () => {
+      try {
+        const response = await api.get('/articles');
+        return response.data;
+      } catch (error) {
+        Log.error('Failed to fetch articles', { error });
+        throw new Error('Unable to fetch articles. Please try again.');
+      }
+    };
+    ```
+
+## Component Development
+- **Functional Components**:
+  - Use functional components with TypeScript interfaces (,).[](https://apidog.com/blog/awesome-cursor-rules/)[](https://dotcursorrules.com/rules)
+  - Example:
+    ```tsx
+    // src/components/Article/index.tsx
+    import { Article } from '@/types/Article';
+
+    interface ArticleProps {
+      article: Article;
+      onClick?: (id: string) => void;
+    }
+
+    export function Article({ article, onClick }: ArticleProps) {
+      return (
+        <div className="p-4" onClick={() => onClick?.(article.id)}>
+          <h2 className="text-xl">{article.title}</h2>
+        </div>
+      );
+    }
+    ```
+- **Styling**:
+  - Use Tailwind CSS in a separate `styles.ts` file ().[](https://dotcursorrules.com/rules)
+  - Example:
+    ```ts
+    // src/components/Article/styles.ts
+    export const styles = {
+      container: 'p-4 bg-white rounded shadow',
+      title: 'text-xl font-bold',
+    };
+    ```
+- **Accessibility (a11y)**:
+  - Use semantic HTML, ARIA attributes, and keyboard navigation ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+  - Example:
+    ```tsx
+    // src/components/Article/index.tsx
+    export function Article({ article, onClick }: ArticleProps) {
+      return (
+        <article
+          className={styles.container}
+          onClick={() => onClick?.(article.id)}
+          tabIndex={0}
+          role="button"
+          aria-label={`View article ${article.title}`}
+          onKeyDown={(e) => e.key === 'Enter' && onClick?.(article.id)}
+        >
+          <h2 className={styles.title}>{article.title}</h2>
+        </article>
+      );
+    }
+    ```
+
+## Hooks
+- **Custom Hooks**:
+  - Create reusable logic in `/src/hooks/use[Feature].ts` ().[](https://apidog.com/blog/awesome-cursor-rules/)
+  - Follow Rules of Hooks (top-level only, `eslint-plugin-react-hooks`) ().[](https://apidog.com/blog/awesome-cursor-rules/)
+  - Example:
+    ```ts
+    // src/hooks/useArticles.ts
+    import { useQuery } from '@tanstack/react-query';
+    import { fetchArticles } from '@/services/Article';
+
+    export function useArticles() {
+      return useQuery({
+        queryKey: ['articles'],
+        queryFn: fetchArticles,
+        onError: (error) => {
+          Log.error('Failed to fetch articles in hook', { error });
+        },
+      });
+    }
+    ```
+
+## Testing
+- **Unit Tests**:
+  - Write tests for components, hooks, and services using Jest and React Testing Library ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+  - Place tests in `/tests/[category]/[Feature].test.ts`.
+  - Example:
+    ```ts
+    // tests/components/Article.test.ts
+    import { render, screen } from '@testing-library/react';
+    import userEvent from '@testing-library/user-event';
+    import { Article } from '@/components/Article';
+
+    describe('Article Component', () => {
+      const mockArticle = { id: '1', title: 'Test Article' };
+      it('renders article title', () => {
+        render(<Article article={mockArticle} />);
+        expect(screen.getByText('Test Article')).toBeInTheDocument();
+      });
+
+      it('calls onClick when clicked', async () => {
+        const handleClick = jest.fn();
+        render(<Article article={mockArticle} onClick={handleClick} />);
+        await userEvent.click(screen.getByRole('button'));
+        expect(handleClick).toHaveBeenCalledWith('1');
+      });
+    });
+    ```
+- **Integration Tests**:
+  - Test critical user flows (e.g., API fetching, SSR rendering).
+  - Example:
+    ```ts
+    // tests/services/Article.test.ts
+    import { fetchArticles } from '@/services/Article';
+    import axios from 'axios';
+
+    jest.mock('axios');
+
+    describe('Article Service', () => {
+      it('fetches articles successfully', async () => {
+        const mockData = [{ id: '1', title: 'Test Article' }];
+        axios.get.mockResolvedValue({ data: mockData });
+        const result = await fetchArticles();
+        expect(result).toEqual(mockData);
+      });
+
+      it('handles API errors', async () => {
+        axios.get.mockRejectedValue(new Error('API Error'));
+        await expect(fetchArticles()).rejects.toThrow('Unable to fetch articles');
+      });
+    });
+    ```
+- **Coverage**:
+  - Aim for >80% coverage on new code to pass SonarQube quality gate.
+  - Run tests with `coverlet`:
+    ```bash
+    dotnet test --collect:"XPlat Code Coverage"
+    ```
+
+## Security
+- **Sanitize Inputs**: Validate and sanitize all user inputs in API services to prevent XSS ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+- **Logging**: Integrate with backend `LoggingExtensions.cs` for secure error logging (no sensitive data, redacted fields).
+  - Example:
+    ```ts
+    // src/utils/logger.ts
+    export const Log = {
+      error: (message: string, context: any) => {
+        // Integrate with backend logger (e.g., via API call or console for frontend)
+        console.error(`[ERROR] ${message}`, context);
+      },
+    };
+    ```
+- **Authentication**:
+  - Use Supabase Auth or AWS Cognito for SSR-compatible authentication (,).[](https://cursor.directory/rules/official)[](https://sbstjn.com/blog/ai-code-companion-cursor-rules/)
+  - Avoid deprecated `auth-helpers-nextjs` or individual cookie methods (`get`, `set`, `remove`) ().[](https://dotcursorrules.com/rules)
+  - Example:
+    ```ts
+    // src/services/Auth.ts
+    import { createServerClient } from '@supabase/ssr';
+
+    export const getUser = async (context: GetServerSidePropsContext) => {
+      const supabase = createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+        cookies: {
+          getAll: () => context.req.cookies,
+          setAll: (cookies) => cookies.forEach((cookie) => context.res.setHeader('Set-Cookie', cookie)),
+        },
+      });
+      const { data } = await supabase.auth.getUser();
+      return data.user;
+    };
+    ```
+
+## Performance
+- Use `React.memo` for components to prevent unnecessary re-renders ().[](https://apidog.com/blog/awesome-cursor-rules/)
+- Implement code splitting with `React.lazy` and `Suspense` ().[](https://dotcursorrules.com/rules)
+- Optimize images with `next/image` (WebP, lazy-loading) ().[](https://cursor.directory/rules/react)
+- Use `@tanstack/react-query` for efficient data fetching and caching ().[](https://dev.to/blamsa0mine/boost-your-development-productivity-with-cursor-rules-a-complete-guide-3nhm)
+
+## SonarQube Integration
+- Ensure all new code is covered by tests to address 0.0% coverage on 45 new lines.
+- Update `sonar-project.properties`:
+  ```properties
+  sonar.projectKey=YourProjectKey
+  sonar.sources=.
+  sonar.exclusions=**/node_modules/**,**/public/**,**/tests/**
+  sonar.javascript.lcov.reportPaths=coverage/lcov.info
+  sonar.test.inclusions=**/tests/**
+  ```
+- Run tests and SonarQube scanner:
+  ```bash
+  npm test -- --coverage
+  sonar-scanner -Dsonar.projectKey=YourProjectKey -Dsonar.host.url=http://your-sonarqube-server -Dsonar.login=your-token
+  ```
+
+## Additional Guidelines
+- **Version Control**: Commit `.cursor/rules/` to share with the team ().[](https://playbooks.com/rules)
+- **Dependencies**: Use `pnpm` for package management ().[](https://dev.to/blamsa0mine/boost-your-development-productivity-with-cursor-rules-a-complete-guide-3nhm)
+  - Example:
+    ```bash
+    pnpm add next react react-dom @tanstack/react-query axios
+    pnpm add -D jest @testing-library/react @testing-library/user-event typescript
+    ```
+- **ESLint**: Enforce rules with `eslint-plugin-react-hooks` and `eslint-plugin-react` ().[](https://apidog.com/blog/awesome-cursor-rules/)
+- **Prettier**: Format code consistently.
+
+## ESLint Guidelines
+
+- **Linting:**
+  - All linting and formatting rules are enforced by the project's `eslint.config.mjs`.
+  - Run `npx eslint src/ --ext .ts,.tsx` to check for lint errors.
+  - Run `npx eslint src/ --ext .ts,.tsx --fix` to auto-fix most issues.
+- **Rules:**
+  - The authoritative rule set is defined in [`eslint.config.mjs`](../../eslint.config.mjs) in the project root.
+  - Do not override or duplicate rules here; always refer to that file for the current rules.
+- **Fixing errors:**
+  - Remove or use unused variables/imports.
+  - Break up long lines.
+  - Replace `any` with a specific type.
+  - Remove or update console statements.
+  - Place each JSX prop on a new line if required.
+  - Add blank lines and fix import order as needed.
+- **See also:**
+  - [eslint.config.mjs](../../eslint.config.mjs) for the full, up-to-date rule set.
+  - [ESLint documentation](https://eslint.org/docs/latest/) for more info.
+# React with Next.js SSR and API Integration Rules
+
+## Project Overview
+- **Framework**: Next.js with App Router for SSR.
+- **Language**: TypeScript (strict mode, no `any` or `unknown` types).
+- **Styling**: Tailwind CSS for responsive, mobile-first design.
+- **API**: RESTful APIs or GraphQL with type-safe clients (Axios or Apollo Client).
+- **Goals**: Implement SSR for SEO and performance, integrate APIs securely, maintain consistent repository structure, and ensure high test coverage.
+
+## Repository Structure
+- Organize files by feature or route to align with Next.js App Router (,):[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)[](https://dev.to/stamigos/setting-up-cursor-rules-the-complete-guide-to-ai-enhanced-development-24cg)
+  ```
+  frontend/
+  ├── .cursor/
+  │   └── rules/
+  │       └── frontend/
+  │           └── react-ssr-api.mdc  # This rule file
+  ├── app/                           # Next.js App Router routes
+  │   ├── [route]/                   # Dynamic routes
+  │   │   ├── page.tsx              # Server-side rendered page
+  │   │   ├── layout.tsx            # Layout for route
+  │   │   └── loading.tsx           # Loading state for Suspense
+  │   └── api/                      # API routes
+  │       └── [endpoint]/route.ts   # API route handlers
+  ├── src/
+  │   ├── components/               # Reusable React components
+  │   │   └── [Feature]/            # Feature-based folder
+  │   │       ├── index.tsx         # Component logic
+  │   │       └── styles.ts         # Tailwind styles
+  │   ├── services/                 # API service layer
+  │   │   └── [Feature].ts          # API call definitions
+  │   ├── hooks/                    # Custom React hooks
+  │   │   └── use[Feature].ts       # Feature-specific hooks
+  │   ├── utils/                    # Utility functions
+  │   └── types/                    # TypeScript type definitions
+  ├── tests/                        # Unit and integration tests
+  │   ├── components/               # Component tests
+  │   ├── services/                 # API service tests
+  │   └── hooks/                    # Hook tests
+  ├── public/                       # Static assets (images, etc.)
+  └── package.json
+  ```
+- **Rules**:
+  - Place new components in `/src/components/[Feature]/index.tsx`.
+  - Define API calls in `/src/services/[Feature].ts`.
+  - Create custom hooks in `/src/hooks/use[Feature].ts`.
+  - Define types in `/src/types/[Feature].ts`.
+  - Write tests in `/tests/[category]/[Feature].test.ts`.
+  - Use kebab-case for directories (e.g., `auth-form`) and PascalCase for component files (e.g., `AuthForm.tsx`) ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+
+## SSR Best Practices
+- **Use Next.js App Router**:
+  - Create server-side rendered pages in `app/[route]/page.tsx` using `getServerSideProps` for dynamic data fetching ().[](https://medium.com/simform-engineering/how-to-implement-ssr-server-side-rendering-in-react-18-e49bc43e9531)
+  - Prefer server components over client components to minimize `use client` usage (,).[](https://cursor.directory/rules/react)[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+  - Example:
+    ```tsx
+    // app/[route]/page.tsx
+    import { GetServerSideProps } from 'next';
+    import { MyData } from '@/types/MyData';
+
+    export const getServerSideProps: GetServerSideProps = async (context) => {
+      const res = await fetch('https://api.example.com/data');
+      const data: MyData = await res.json();
+      return { props: { data } };
+    };
+
+    export default function Page({ data }: { data: MyData }) {
+      return <div>{data.title}</div>;
+    }
+    ```
+- **Suspense and Loading**:
+  - Wrap client components in `Suspense` with a `loading.tsx` fallback (,).[](https://cursor.directory/rules/react)[](https://dotcursorrules.com/rules)
+  - Example:
+    ```tsx
+    // app/[route]/page.tsx
+    import { Suspense } from 'react';
+    import MyComponent from '@/components/MyComponent';
+
+    export default function Page() {
+      return (
+        <Suspense fallback={<div>Loading...</div>}>
+          <MyComponent />
+        </Suspense>
+      );
+    }
+    ```
+- **Optimize Web Vitals**:
+  - Use `next/image` for optimized images (WebP, lazy-loading) ().[](https://cursor.directory/rules/react)
+  - Minimize `useEffect` and `useState` in client components ().[](https://cursor.directory/rules/popular)
+  - Monitor LCP, CLS, and FID ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+
+## API Integration
+- **Service Layer**:
+  - Define API calls in `/src/services/[Feature].ts` using Axios or Apollo Client (,).[](https://github.com/PatrickJS/awesome-cursorrules)[](https://sbstjn.com/blog/ai-code-companion-cursor-rules/)
+  - Use type-safe interfaces for request/response data.
+  - Sanitize inputs to prevent XSS ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+  - Example (Axios):
+    ```ts
+    // src/services/Article.ts
+    import axios from 'axios';
+    import { Article } from '@/types/Article';
+
+    const api = axios.create({ baseURL: 'https://api.example.com' });
+
+    export const fetchArticles = async (): Promise<Article[]> => {
+      const response = await api.get('/articles');
+      return response.data;
+    };
+
+    export const createArticle = async (data: Article): Promise<Article> => {
+      if (!data.title || data.title.length < 3) {
+        throw new Error('Title too short');
+      }
+      const response = await api.post('/articles', data);
+      return response.data;
+    };
+    ```
+- **GraphQL (Optional)**:
+  - Use Apollo Client for GraphQL with type-safe queries ().[](https://sbstjn.com/blog/ai-code-companion-cursor-rules/)
+  - Example:
+    ```ts
+    // src/services/Article.ts
+    import { gql, ApolloClient, InMemoryCache } from '@apollo/client';
+    
+    const client = new ApolloClient({
+      uri: 'https://api.example.com/graphql',
+      cache: new InMemoryCache(),
+    });
+
+    const GET_ARTICLES = gql`
+      query GetArticles {
+        articles {
+          id
+          title
+        }
+      }
+    `;
+
+    export const fetchArticles = async () => {
+      const { data } = await client.query({ query: GET_ARTICLES });
+      return data.articles;
+    };
+    ```
+- **Error Handling**:
+  - Implement user-friendly error messages and log errors securely (integrate with `LoggingExtensions.cs` from your backend) ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+  - Example:
+    ```ts
+    // src/services/Article.ts
+    import { Log } from '@/utils/logger'; // Assuming a logger utility
+
+    export const fetchArticles = async () => {
+      try {
+        const response = await api.get('/articles');
+        return response.data;
+      } catch (error) {
+        Log.error('Failed to fetch articles', { error });
+        throw new Error('Unable to fetch articles. Please try again.');
+      }
+    };
+    ```
+
+## Component Development
+- **Functional Components**:
+  - Use functional components with TypeScript interfaces (,).[](https://apidog.com/blog/awesome-cursor-rules/)[](https://dotcursorrules.com/rules)
+  - Example:
+    ```tsx
+    // src/components/Article/index.tsx
+    import { Article } from '@/types/Article';
+
+    interface ArticleProps {
+      article: Article;
+      onClick?: (id: string) => void;
+    }
+
+    export function Article({ article, onClick }: ArticleProps) {
+      return (
+        <div className="p-4" onClick={() => onClick?.(article.id)}>
+          <h2 className="text-xl">{article.title}</h2>
+        </div>
+      );
+    }
+    ```
+- **Styling**:
+  - Use Tailwind CSS in a separate `styles.ts` file ().[](https://dotcursorrules.com/rules)
+  - Example:
+    ```ts
+    // src/components/Article/styles.ts
+    export const styles = {
+      container: 'p-4 bg-white rounded shadow',
+      title: 'text-xl font-bold',
+    };
+    ```
+- **Accessibility (a11y)**:
+  - Use semantic HTML, ARIA attributes, and keyboard navigation ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+  - Example:
+    ```tsx
+    // src/components/Article/index.tsx
+    export function Article({ article, onClick }: ArticleProps) {
+      return (
+        <article
+          className={styles.container}
+          onClick={() => onClick?.(article.id)}
+          tabIndex={0}
+          role="button"
+          aria-label={`View article ${article.title}`}
+          onKeyDown={(e) => e.key === 'Enter' && onClick?.(article.id)}
+        >
+          <h2 className={styles.title}>{article.title}</h2>
+        </article>
+      );
+    }
+    ```
+
+## Hooks
+- **Custom Hooks**:
+  - Create reusable logic in `/src/hooks/use[Feature].ts` ().[](https://apidog.com/blog/awesome-cursor-rules/)
+  - Follow Rules of Hooks (top-level only, `eslint-plugin-react-hooks`) ().[](https://apidog.com/blog/awesome-cursor-rules/)
+  - Example:
+    ```ts
+    // src/hooks/useArticles.ts
+    import { useQuery } from '@tanstack/react-query';
+    import { fetchArticles } from '@/services/Article';
+
+    export function useArticles() {
+      return useQuery({
+        queryKey: ['articles'],
+        queryFn: fetchArticles,
+        onError: (error) => {
+          Log.error('Failed to fetch articles in hook', { error });
+        },
+      });
+    }
+    ```
+
+## Testing
+- **Unit Tests**:
+  - Write tests for components, hooks, and services using Jest and React Testing Library ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+  - Place tests in `/tests/[category]/[Feature].test.ts`.
+  - Example:
+    ```ts
+    // tests/components/Article.test.ts
+    import { render, screen } from '@testing-library/react';
+    import userEvent from '@testing-library/user-event';
+    import { Article } from '@/components/Article';
+
+    describe('Article Component', () => {
+      const mockArticle = { id: '1', title: 'Test Article' };
+      it('renders article title', () => {
+        render(<Article article={mockArticle} />);
+        expect(screen.getByText('Test Article')).toBeInTheDocument();
+      });
+
+      it('calls onClick when clicked', async () => {
+        const handleClick = jest.fn();
+        render(<Article article={mockArticle} onClick={handleClick} />);
+        await userEvent.click(screen.getByRole('button'));
+        expect(handleClick).toHaveBeenCalledWith('1');
+      });
+    });
+    ```
+- **Integration Tests**:
+  - Test critical user flows (e.g., API fetching, SSR rendering).
+  - Example:
+    ```ts
+    // tests/services/Article.test.ts
+    import { fetchArticles } from '@/services/Article';
+    import axios from 'axios';
+
+    jest.mock('axios');
+
+    describe('Article Service', () => {
+      it('fetches articles successfully', async () => {
+        const mockData = [{ id: '1', title: 'Test Article' }];
+        axios.get.mockResolvedValue({ data: mockData });
+        const result = await fetchArticles();
+        expect(result).toEqual(mockData);
+      });
+
+      it('handles API errors', async () => {
+        axios.get.mockRejectedValue(new Error('API Error'));
+        await expect(fetchArticles()).rejects.toThrow('Unable to fetch articles');
+      });
+    });
+    ```
+- **Coverage**:
+  - Aim for >80% coverage on new code to pass SonarQube quality gate.
+  - Run tests with `coverlet`:
+    ```bash
+    dotnet test --collect:"XPlat Code Coverage"
+    ```
+
+## Security
+- **Sanitize Inputs**: Validate and sanitize all user inputs in API services to prevent XSS ().[](https://cursor.directory/nextjs-react-vite-javascript-cursor-rules)
+- **Logging**: Integrate with backend `LoggingExtensions.cs` for secure error logging (no sensitive data, redacted fields).
+  - Example:
+    ```ts
+    // src/utils/logger.ts
+    export const Log = {
+      error: (message: string, context: any) => {
+        // Integrate with backend logger (e.g., via API call or console for frontend)
+        console.error(`[ERROR] ${message}`, context);
+      },
+    };
+    ```
+- **Authentication**:
+  - Use Supabase Auth or AWS Cognito for SSR-compatible authentication (,).[](https://cursor.directory/rules/official)[](https://sbstjn.com/blog/ai-code-companion-cursor-rules/)
+  - Avoid deprecated `auth-helpers-nextjs` or individual cookie methods (`get`, `set`, `remove`) ().[](https://dotcursorrules.com/rules)
+  - Example:
+    ```ts
+    // src/services/Auth.ts
+    import { createServerClient } from '@supabase/ssr';
+
+    export const getUser = async (context: GetServerSidePropsContext) => {
+      const supabase = createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+        cookies: {
+          getAll: () => context.req.cookies,
+          setAll: (cookies) => cookies.forEach((cookie) => context.res.setHeader('Set-Cookie', cookie)),
+        },
+      });
+      const { data } = await supabase.auth.getUser();
+      return data.user;
+    };
+    ```
+
+## Performance
+- Use `React.memo` for components to prevent unnecessary re-renders ().[](https://apidog.com/blog/awesome-cursor-rules/)
+- Implement code splitting with `React.lazy` and `Suspense` ().[](https://dotcursorrules.com/rules)
+- Optimize images with `next/image` (WebP, lazy-loading) ().[](https://cursor.directory/rules/react)
+- Use `@tanstack/react-query` for efficient data fetching and caching ().[](https://dev.to/blamsa0mine/boost-your-development-productivity-with-cursor-rules-a-complete-guide-3nhm)
+
+## SonarQube Integration
+- Ensure all new code is covered by tests to address 0.0% coverage on 45 new lines.
+- Update `sonar-project.properties`:
+  ```properties
+  sonar.projectKey=YourProjectKey
+  sonar.sources=.
+  sonar.exclusions=**/node_modules/**,**/public/**,**/tests/**
+  sonar.javascript.lcov.reportPaths=coverage/lcov.info
+  sonar.test.inclusions=**/tests/**
+  ```
+- Run tests and SonarQube scanner:
+  ```bash
+  npm test -- --coverage
+  sonar-scanner -Dsonar.projectKey=YourProjectKey -Dsonar.host.url=http://your-sonarqube-server -Dsonar.login=your-token
+  ```
+
+## Additional Guidelines
+- **Version Control**: Commit `.cursor/rules/` to share with the team ().[](https://playbooks.com/rules)
+- **Dependencies**: Use `pnpm` for package management ().[](https://dev.to/blamsa0mine/boost-your-development-productivity-with-cursor-rules-a-complete-guide-3nhm)
+  - Example:
+    ```bash
+    pnpm add next react react-dom @tanstack/react-query axios
+    pnpm add -D jest @testing-library/react @testing-library/user-event typescript
+    ```
+- **ESLint**: Enforce rules with `eslint-plugin-react-hooks` and `eslint-plugin-react` ().[](https://apidog.com/blog/awesome-cursor-rules/)
+- **Prettier**: Format code consistently.
+
+## ESLint Guidelines
+
+- **Linting:**
+  - All linting and formatting rules are enforced by the project's `eslint.config.mjs`.
+  - Run `npx eslint src/ --ext .ts,.tsx` to check for lint errors.
+  - Run `npx eslint src/ --ext .ts,.tsx --fix` to auto-fix most issues.
+- **Rules:**
+  - The authoritative rule set is defined in [`eslint.config.mjs`](../../eslint.config.mjs) in the project root.
+  - Do not override or duplicate rules here; always refer to that file for the current rules.
+- **Fixing errors:**
+  - Remove or use unused variables/imports.
+  - Break up long lines.
+  - Replace `any` with a specific type.
+  - Remove or update console statements.
+  - Place each JSX prop on a new line if required.
+  - Add blank lines and fix import order as needed.
+- **See also:**
+  - [eslint.config.mjs](../../eslint.config.mjs) for the full, up-to-date rule set.
+  - [ESLint documentation](https://eslint.org/docs/latest/) for more info.

@@ -1,0 +1,14 @@
+{
+  "editor.tabSize": 2,
+  "editor.formatOnSave": false,
+  "editor.insertSpaces": true,
+  "eslint.format.enable": true,
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always",
+  },
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "explorer.compactFolders": false
+}

@@ -1,0 +1,11 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\src",
+    "\\src\\components",
+    "\\src\\components\\complaints-management",
+    "\\src\\components\\complaints-management\\complaint-details-tabs"
+  ],
+  "SelectedNode": "\\src\\components\\complaints-management\\complaint-details-tabs\\note-sheet-tab.tsx",
+  "PreviewInSolutionExplorer": false
+}
