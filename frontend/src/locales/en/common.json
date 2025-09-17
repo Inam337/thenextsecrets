@@ -1,0 +1,150 @@
+{
+  "app": {
+    "title": "Store",
+    "description": "Store Management System",
+    "version": "Version 1.0.0"
+  },
+  "common": {
+    "text": {},
+    "placeholder": {},
+    "actions": {},
+    "errors": {}
+  },
+  "login": {
+    "text": {
+      "title": "Sign in",
+      "subtitle": "Enter your email and password to access your account",
+      "noAccount": "Don't have an account?",
+      "signUpLink": "Sign up"
+    },
+    "labels": {
+      "email": "Email",
+      "password": "Password"
+    },
+    "placeholders": {
+      "email": "Enter your email",
+      "password": "Enter your password"
+    },
+    "actions": {
+      "signIn": "Sign in",
+      "signingIn": "Signing in...",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "forgotPassword": "Forgot your password?"
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Password is required",
+      "passwordMinLength": "Password must be at least 6 characters"
+    }
+  },
+  "register": {
+    "text": {
+      "title": "Create account",
+      "subtitle": "Enter your information to create your account",
+      "hasAccount": "Already have an account?",
+      "signInLink": "Sign in",
+      "successMessage": "Registration successful! Please login with your credentials."
+    },
+    "labels": {
+      "name": "Full Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm Password"
+    },
+    "placeholders": {
+      "name": "Enter your full name",
+      "email": "Enter your email",
+      "password": "Enter your password",
+      "confirmPassword": "Confirm your password"
+    },
+    "actions": {
+      "createAccount": "Create account",
+      "creatingAccount": "Creating account...",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
+    },
+    "errors": {
+      "registrationFailed": "Registration failed. Please try again.",
+      "nameRequired": "Full name is required",
+      "nameMinLength": "Name must be at least 2 characters",
+      "nameMaxLength": "Name must be less than 100 characters",
+      "nameInvalid": "Name can only contain letters and spaces",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Password is required",
+      "passwordMinLength": "Password must be at least 6 characters",
+      "passwordMaxLength": "Password must be less than 100 characters",
+      "passwordComplexity": "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+      "confirmPasswordRequired": "Please confirm your password",
+      "passwordsDoNotMatch": "Passwords do not match"
+    }
+  },
+  "forgotPassword": {
+    "text": {
+      "title": "Forgot Password",
+      "subtitle": "Enter your email address and we'll send you a link to reset your password",
+      "rememberPassword": "Remember your password?",
+      "signInLink": "Sign in",
+      "successMessage": "Password reset link has been sent to your email address."
+    },
+    "labels": {
+      "email": "Email Address"
+    },
+    "placeholders": {
+      "email": "Enter your email address"
+    },
+    "actions": {
+      "sendResetLink": "Send Reset Link",
+      "sendingLink": "Sending link...",
+      "backToLogin": "Back to Login"
+    },
+    "errors": {
+      "emailRequired": "Email address is required",
+      "emailInvalid": "Please enter a valid email address",
+      "sendFailed": "Failed to send reset link. Please try again."
+    }
+  },
+  "insights": {
+    "text": {
+      "title": "Dashboard Insights",
+      "subtitle": "Overview of your account activity and performance metrics",
+      "welcomeMessage": "Welcome to your dashboard insights"
+    },
+    "labels": {
+      "totalUsers": "Total Users",
+      "activeUsers": "Active Users",
+      "newSignups": "New Signups",
+      "conversionRate": "Conversion Rate"
+    },
+    "actions": {
+      "refreshData": "Refresh Data",
+      "exportReport": "Export Report",
+      "viewDetails": "View Details"
+    },
+    "metrics": {
+      "users": "Users",
+      "sessions": "Sessions",
+      "pageViews": "Page Views",
+      "bounceRate": "Bounce Rate"
+    },
+    "charts": {
+      "userGrowth": "User Growth Over Time",
+      "trafficSources": "Traffic Sources",
+      "deviceBreakdown": "Device Breakdown"
+    }
+  },
+   "notFound": {
+      "text": {
+        "title": "Page Not Found",
+        "description": "The page you are looking for does not exist or has been moved.",
+        "helpText": "If you believe this is an error, please contact support."
+      },
+      "actions": {
+        "goBack": "Go Back",
+        "goHome": "Go Home"
+      }
+    }
+}

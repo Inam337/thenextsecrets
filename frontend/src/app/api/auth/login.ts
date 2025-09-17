@@ -1,33 +1,43 @@
 import { NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
-import bcrypt from 'bcrypt'
-
-const ACCESS_SECRET = process.env.ACCESS_SECRET!
-const REFRESH_SECRET = process.env.REFRESH_SECRET!
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json()
+  try {
+    const { email, password } = await req.json()
 
-  // ✅ Normally you'd look up the user from DB
-  if (email !== 'test@example.com' || password !== '123456') {
-    return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 })
+    // Forward the request to your backend API
+    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000'
+    const response = await fetch(`${backendUrl}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: data.message || 'Login failed',
+          error: data.error 
+        }, 
+        { status: response.status }
+      )
+    }
+
+    // Return the backend response
+    return NextResponse.json(data)
+  } catch (error) {
+    console.error('Login API error:', error)
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: 'Login failed', 
+        error: 'Internal server error' 
+      }, 
+      { status: 500 }
+    )
   }
-
-  const user = { id: 1, email }
-
-  const accessToken = jwt.sign(user, ACCESS_SECRET, { expiresIn: '15m' })
-  const refreshToken = jwt.sign(user, REFRESH_SECRET, { expiresIn: '7d' })
-
-  const res = NextResponse.json({ user, accessToken })
-
-  // Set refresh token as HTTP-only cookie
-  res.cookies.set('refreshToken', refreshToken, {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: true,
-    path: '/',
-    maxAge: 7 * 24 * 60 * 60,
-  })
-
-  return res
 }

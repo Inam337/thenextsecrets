@@ -190,6 +190,12 @@ export function AppSidebar({
       isImplemented: true,
     },
     {
+      label: 'Insights',
+      url: '/insights',
+      icon: CommonIconNames.GRAPH_ICON,
+      isImplemented: true,
+    },
+    {
       label: 'Settings',
       url: '/settings',
       icon: CommonIconNames.COG_ICON,

@@ -1,109 +1,116 @@
 import api from '@/libs/axios';
 
-// Mock user data
-const mockUsers = [
-  {
-    id: '1',
-    fullName: 'John Doe',
-    email: 'john@example.com',
-    password: '123456',
-  },
-  {
-    id: '2',
-    fullName: 'Jane Smith',
-    email: 'jane@example.com',
-    password: '123456',
-  },
-];
-
-// Mock API responses with delays to simulate real API calls
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const generateToken = (userId: string) => {
-  return `mock_token_${userId}_${Date.now()}`;
-};
-
 export const authService = {
   login: async (email: string, password: string) => {
-    await delay(1000); // Simulate network delay
-    
-    const user = mockUsers.find(u => u.email === email && u.password === password);
-    
-    if (!user) {
-      throw new Error('Invalid email or password');
-    }
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Login failed');
+      }
 
-    const token = generateToken(user.id);
-    
-    return {
-      data: {
-        user: {
-          id: user.id,
-          fullName: user.fullName,
-          email: user.email,
+      return {
+        data: {
+          user: {
+            id: response.data.data.user?.id || '1',
+            fullName: response.data.data.user?.name || email.split('@')[0],
+            email: email,
+          },
+          accessToken: response.data.data.accessToken,
+          refreshToken: response.data.data.refreshToken,
         },
-        accessToken: token,
-      },
-    };
+      };
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Login failed. Please try again.');
+    }
   },
 
   register: async (fullName: string, email: string, password: string) => {
-    await delay(1200); // Simulate network delay
-    
-    // Check if user already exists
-    const existingUser = mockUsers.find(u => u.email === email);
-    if (existingUser) {
-      throw new Error('User already exists with this email');
-    }
+    try {
+      const response = await api.post('/auth/register', { 
+        name: fullName, 
+        email, 
+        password 
+      });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Registration failed');
+      }
 
-    // Create new user
-    const newUser = {
-      id: (mockUsers.length + 1).toString(),
-      fullName,
-      email,
-      password,
-    };
-    
-    mockUsers.push(newUser);
-    const token = generateToken(newUser.id);
-    
-    return {
-      data: {
-        user: {
-          id: newUser.id,
-          fullName: newUser.fullName,
-          email: newUser.email,
+      return {
+        data: {
+          user: {
+            id: response.data.user.id,
+            fullName: response.data.user.name,
+            email: response.data.user.email,
+          },
+          accessToken: null, // Registration doesn't return token, user needs to login
         },
-        accessToken: token,
-      },
-    };
+      };
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Registration failed. Please try again.');
+    }
   },
 
   logout: async () => {
-    await delay(500); // Simulate network delay
-    
-    return {
-      data: {
-        message: 'Logged out successfully',
-      },
-    };
+    try {
+      await api.post('/auth/logout');
+      return {
+        data: {
+          message: 'Logged out successfully',
+        },
+      };
+    } catch (error) {
+      // Even if logout fails on server, clear local state
+      return {
+        data: {
+          message: 'Logged out successfully',
+        },
+      };
+    }
+  },
+
+  refreshToken: async (refreshToken: string) => {
+    try {
+      const response = await api.post('/auth/refresh', { token: refreshToken });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Token refresh failed');
+      }
+
+      return {
+        data: {
+          accessToken: response.data.data.accessToken,
+        },
+      };
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('Token refresh failed');
+    }
   },
 
   me: async () => {
-    await delay(800); // Simulate network delay
-    
-    // In a real app, this would validate the token and return user data
-    // For mock purposes, return the first user
-    const user = mockUsers[0];
-    
-    return {
-      data: {
-        user: {
-          id: user.id,
-          fullName: user.fullName,
-          email: user.email,
+    try {
+      const response = await api.get('/users/me');
+      return {
+        data: {
+          user: {
+            id: response.data.id,
+            fullName: response.data.name,
+            email: response.data.email,
+          },
         },
-      },
-    };
+      };
+    } catch (error) {
+      throw new Error('Failed to get user information');
+    }
   },
 };

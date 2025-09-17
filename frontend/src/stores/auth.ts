@@ -4,6 +4,7 @@ import { setAccessToken } from '@/libs/axios';
 import { authService } from '@/services/auth';
 
 type User = {
+  id: string;
   fullName: string;
   email: string;
 };
@@ -11,6 +12,7 @@ type User = {
 type AuthState = {
   user: User | null;
   accessToken: string | null;
+  refreshToken: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (fullName: string, email: string, password: string) => Promise<void>;
@@ -23,6 +25,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       accessToken: null,
+      refreshToken: null,
       loading: false,
 
       login: async (email, password) => {
@@ -30,7 +33,11 @@ export const useAuthStore = create<AuthState>()(
         try {
           const { data } = await authService.login(email, password);
           setAccessToken(data.accessToken);
-          set({ user: data.user, accessToken: data.accessToken });
+          set({ 
+            user: data.user, 
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken 
+          });
         } finally {
           set({ loading: false });
         }
@@ -40,8 +47,9 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true });
         try {
           const { data } = await authService.register(fullName, email, password);
-          setAccessToken(data.accessToken);
-          set({ user: data.user, accessToken: data.accessToken });
+          // Registration doesn't automatically log in the user
+          // They need to login separately
+          set({ user: data.user });
         } finally {
           set({ loading: false });
         }
@@ -50,7 +58,7 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         await authService.logout();
         setAccessToken('');
-        set({ user: null, accessToken: null });
+        set({ user: null, accessToken: null, refreshToken: null });
       },
 
       hydrate: () => {
@@ -63,6 +71,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
       }),
     }
   )
